@@ -1,0 +1,329 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+struct product {
+    char *key;
+    char *value;
+    char *genre;
+    char *artist;
+	struct product *next;
+};
+ 
+typedef struct product entry_t;
+ 
+struct product_hashtable {
+	int size;
+	struct product **table;	
+};
+
+typedef struct product_hashtable hashtable_t;
+
+struct query_detail {
+    char *query;
+    char *product_id;
+    char *t_stamp;
+    struct query_detail *next1;
+};
+ 
+typedef struct query_detail q;
+
+struct query_hashtable {
+    int size;
+	struct query_detail **table1;	
+};
+
+typedef struct query_hashtable qht;
+
+qht *qht_create1( int size ) {
+ 
+    qht *hashtable1 = NULL;
+	int i;
+ 
+	if( size < 1 ) return NULL;
+ 
+	/* Allocate the table itself. */
+	if( ( hashtable1 = malloc( sizeof( qht ) ) ) == NULL ) {
+        
+		return NULL;
+	}
+ 
+	/* Allocate pointers to the head nodes. */
+	if( ( hashtable1->table1 = malloc( sizeof( q* ) * size ) ) == NULL ) {
+       
+		return NULL;
+	}
+	for( i = 0; i < size; i++ ) {
+      
+		hashtable1->table1[i] = NULL;
+	}
+ 
+	hashtable1->size = size;
+ 
+	return hashtable1;	
+}
+ 
+ /* Newpair for query detail */
+ q *qht_newpair( char *key, char *value, char *t_stamp ) {
+    q *newpair;
+ 
+	if( ( newpair = malloc( sizeof( qht ) ) ) == NULL ) {
+		return NULL;
+	}
+ 
+	if( ( newpair->query = strdup( key ) ) == NULL ) {
+		return NULL;
+	}
+ 
+	if( ( newpair->product_id = strdup( value ) ) == NULL ) {
+		return NULL;
+	}
+    
+    if( ( newpair->t_stamp = strdup( t_stamp ) ) == NULL ) {
+    	return NULL;
+    }
+    
+	newpair->next1 = NULL;
+ 
+	return newpair;
+}
+
+
+int qht_hash( qht *hashtable, char *key ) {
+ 
+    unsigned long int hashval;
+    int i = 0;
+ 
+	/* Convert our string to an integer */
+	while( hashval < 1000 && i < strlen( key ) ) {
+		hashval = hashval << 8;
+		hashval += key[ i ];
+		i++;
+	}
+ 
+	return hashval;
+}
+
+
+void qht_set( qht *hashtable, char *key, char *value, char *t_stamp ) 
+{
+    int bin = 0;
+	q *newpair = NULL;
+	q *next = NULL;
+	q *last = NULL;
+  
+	bin = qht_hash( hashtable, key );
+	next = hashtable->table1[ bin ];
+ 
+
+
+		newpair = qht_newpair( key,value,t_stamp );
+        newpair->next1 = next;
+    	hashtable->table1[ bin ] = newpair;
+ 
+
+}
+ 
+/*get q details*/
+
+char *qht_get( qht *hashtable, char *key, hashtable_t *hashtable2 ) {
+    int bin = 0;
+	q *pair;
+ 
+	bin = qht_hash( hashtable, key );
+ 
+	/* Step through the bin, looking for our value. */
+	pair = hashtable->table1[ bin ];
+	
+	while( pair != NULL)
+	{
+		ht_get(hashtable2,pair->product_id);
+		//printf("%s\n",strcat(pair->product_id, pair->t_stamp));
+		pair=pair->next1;
+	}
+	
+}
+
+/* Create a new hashtable. */
+hashtable_t *ht_create( int size ) {
+ 
+	hashtable_t *hashtable = NULL;
+	int i;
+ 
+	if( size < 1 ) return NULL;
+ 
+	/* Allocate the table itself. */
+	if( ( hashtable = malloc( sizeof( hashtable_t ) ) ) == NULL ) {
+		return NULL;
+	}
+ 
+	/* Allocate pointers to the head nodes. */
+	if( ( hashtable->table = malloc( sizeof( entry_t * ) * size ) ) == NULL ) {
+		return NULL;
+	}
+	for( i = 0; i < size; i++ ) {
+		hashtable->table[i] = NULL;
+	}
+ 
+	hashtable->size = size;
+ 
+	return hashtable;	
+}
+ 
+/* Hash a string for a particular hash table. */
+int ht_hash( hashtable_t *hashtable, char *key ) {
+ 
+	unsigned long int hashval;
+	int i = 0;
+ 
+	/* Convert our string to an integer */
+	while( hashval < 1000 && i < strlen( key ) ) {
+		hashval = hashval << 8;
+		hashval += key[ i ];
+		i++;
+	}
+ 
+	return hashval % hashtable->size;
+}
+ 
+/* Create a key-value pair. */
+entry_t *ht_newpair( char *key, char *value, char *genre, char *artist ) {
+	entry_t *newpair;
+ 
+	if( ( newpair = malloc( sizeof( entry_t ) ) ) == NULL ) {
+		return NULL;
+	}
+ 
+	if( ( newpair->key = strdup( key ) ) == NULL ) {
+		return NULL;
+	}
+ 
+	if( ( newpair->value = strdup( value ) ) == NULL ) {
+		return NULL;
+	}
+    
+    if( ( newpair->genre = strdup( genre ) ) == NULL ) {
+    	return NULL;
+    }
+    if( ( newpair->artist = strdup( artist ) ) == NULL ) {
+    	return NULL;
+    }    
+	newpair->next = NULL;
+ 
+	return newpair;
+}
+ 
+/* Insert a key-value pair into a hash table. */
+void pht_set( hashtable_t *hashtable, char *key, char *value, char *genre, char *artist ) 
+{
+	int bin = 0;
+	entry_t *newpair = NULL;
+	entry_t *next = NULL;
+	entry_t *last = NULL;
+ 
+	bin = ht_hash( hashtable, key );
+ 
+	next = hashtable->table[ bin ];
+ 
+	while( next != NULL && next->key != NULL && strcmp( key, next->key ) > 0 ) {
+		last = next;
+		next = next->next;
+	}
+ 
+	/* There's already a pair.  Let's replace that string. */
+	if( next != NULL && next->key != NULL && strcmp( key, next->key ) == 0 ) {
+ 
+		free( next->value );
+		next->value = strdup( value );
+ 
+	/* Nope, could't find it.  Time to grow a pair. */
+	} else {
+		newpair = ht_newpair( key,value,genre,artist );
+ 
+		/* We're at the start of the linked list in this bin. */
+		if( next == hashtable->table[ bin ] ) {
+			newpair->next = next;
+			hashtable->table[ bin ] = newpair;
+	
+		/* We're at the end of the linked list in this bin. */
+		} else if ( next == NULL ) {
+			last->next = newpair;
+	
+		/* We're in the middle of the list. */
+		} else  {
+			newpair->next = next;
+			last->next = newpair;
+		}
+	}
+}
+ 
+/* Retrieve a key-value pair from a hash table. */
+void ht_get( hashtable_t *hashtable, char *key ) {
+	int bin = 0;
+	entry_t *pair;
+ 
+	bin = ht_hash( hashtable, key );
+ 
+	/* Step through the bin, looking for our value. */
+	pair = hashtable->table[ bin ];
+	while( pair != NULL && pair->key != NULL && strcmp( key, pair->key ) > 0 ) {
+		pair = pair->next;
+	}
+ 
+	/* Did we actually find anything? */
+	if( pair == NULL || pair->key == NULL || strcmp( key, pair->key ) != 0 ) {
+		printf ("%s","Product does not exist");
+ 
+	} else {
+		printf("Product key: %s Product name:%s Genre:%s Artist:%s",pair->key, pair->value,  pair->genre,  pair->artist);
+	}
+	
+}
+ 
+ 
+int main( int argc, char **argv ) {
+ 
+	hashtable_t *hashtable = ht_create(1);
+ 
+/* Enter product details. Order should be integer product id, name, genre and artist*/
+	pht_set( hashtable, "1", "pen","stationary","shahrukh" );
+	pht_set( hashtable, "2", "kindle","laptop","bradd" );
+	pht_set( hashtable, "3", "mac","laptop","steve" );
+	pht_set( hashtable, "4", "harley","automobile","davidson" );
+    pht_set( hashtable, "5", "unbxd","service","prashant" );
+    pht_set( hashtable, "6", "pen","stationary","shahrukh" );
+	pht_set( hashtable, "7", "kindle","laptop","bradd" );
+	pht_set( hashtable, "8", "mac","laptop","steve" );
+	pht_set( hashtable, "9", "harley","automobile","davidson" );
+    pht_set( hashtable, "10", "unbxd","service","prashant" );
+    pht_set( hashtable, "11", "pen","stationary","shahrukh" );
+	pht_set( hashtable, "12", "kindle","laptop","bradd" );
+	pht_set( hashtable, "13", "mac","laptop","steve" );
+	pht_set( hashtable, "14", "harley","automobile","davidson" );
+    pht_set( hashtable, "15", "unbxd","service","prashant" );
+    
+    
+    qht *hashtable1 = qht_create1(1);
+    
+/* Enter query details. Order -  query , integer product id such that product exists and timestamp.*/
+    qht_set( hashtable1, "awesome", "1","Monday");
+    qht_set( hashtable1, "awesome", "2","Tuesday" );
+	qht_set( hashtable1, "nice", "3","Wednesday" );
+	qht_set( hashtable1, "good", "4","Thursday" );
+    qht_set( hashtable1, "famous", "5","Friday");
+    qht_set( hashtable1, "expensive", "6","Saturday");
+	qht_set( hashtable1, "mobile", "7","Sunday" );
+	qht_set( hashtable1, "nice", "8","Wednesday" );
+	qht_set( hashtable1, "good", "9","Thursday" );
+    qht_set( hashtable1, "famous", "10","Friday");
+    qht_set( hashtable1, "expensive", "11","Saturday");
+	qht_set( hashtable1, "mobile", "12","Sunday" );
+	qht_set( hashtable1, "mobile", "13","Sunday" );
+	/* char search_query[15];
+	printf("%s", "Enter any query from these words - awesome good nice famous expensive and mobile");
+	scanf("%s",&search_query);
+*/
+    qht_get( hashtable1,"mobile",hashtable);
+    
+	return 0;
+}
